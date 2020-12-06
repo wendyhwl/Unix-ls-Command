@@ -19,12 +19,9 @@
 // simple sorting function that takes O(n^2)
 void sort(char **a, int len)
 {
-  for (int i = 0; i < len; ++i)
-  {
-    for (int j = 0; j + i + 1 < len; ++j)
-    {
-      if (strcmp(a[j], a[j + 1]) > 0)
-      {
+  for (int i = 0; i < len; ++i) {
+    for (int j = 0; j + i + 1 < len; ++j) {
+      if (strcmp(a[j], a[j + 1]) > 0) {
         char *tmp = a[j];
         a[j] = a[j + 1];
         a[j + 1] = tmp;
@@ -40,10 +37,8 @@ bool parse_arguments(int argc, char **argv, struct option_t *option)
 
   // taking command line options one by one
   // test if there is i/l/R
-  while ((opt = getopt(argc, argv, "ilR")) != -1)
-  {
-    switch (opt)
-    {
+  while ((opt = getopt(argc, argv, "ilR")) != -1) {
+    switch (opt) {
     case 'i':
       option->has_i = true;
       break;
@@ -59,8 +54,7 @@ bool parse_arguments(int argc, char **argv, struct option_t *option)
   }
 
   // if index of next element < argc
-  if (optind < argc)
-  {
+  if (optind < argc) {
     option->num_path = argc - optind;
     option->paths = argv + optind;
     sort(option->paths, option->num_path);
@@ -85,8 +79,7 @@ bool isreg(const char *path)
 {
   struct stat st;
   // if status error, exit with EXIT_FAILURE
-  if (stat(path, &st))
-  {
+  if (stat(path, &st)) {
     perror("stat");
     exit(EXIT_FAILURE);
   }
@@ -99,8 +92,7 @@ bool isdir(const char *path)
 {
   struct stat st;
   // if status error, exit with EXIT_FAILURE
-  if (stat(path, &st))
-  {
+  if (stat(path, &st)) {
     perror("stat");
     exit(EXIT_FAILURE);
   }
@@ -140,8 +132,7 @@ int get_size_length(const char *file)
   stat(file, &st);
   int len = 0;
   int n = st.st_size;
-  do
-  {
+  do {
     ++len;
     n /= 10;
   } while (n);
@@ -152,11 +143,9 @@ int get_size_length(const char *file)
 int get_max_size(struct dirent **namelist, int n)
 {
   int max = 0;
-  while (n--)
-  {
+  while (n--) {
     const char *name = namelist[n]->d_name;
-    if (strcmp(name, ".") && strcmp(name, ".."))
-    {
+    if (strcmp(name, ".") && strcmp(name, "..")) {
       max = MAX(max, get_size_length(name));
     }
   }
@@ -166,10 +155,8 @@ int get_max_size(struct dirent **namelist, int n)
 // function to get file name
 const char *get_file_name(const char *path)
 {
-  for (int i = (int)strlen(path) - 1; i >= 0; --i)
-  {
-    if (path[i] == '/')
-    {
+  for (int i = (int)strlen(path) - 1; i >= 0; --i) {
+    if (path[i] == '/') {
       return path + i + 1;
     }
   }
@@ -181,22 +168,19 @@ void lf(const char *file, struct option_t *opt, int width)
 {
   struct stat st;
   // if status error, exit with EXIT_FAILURE
-  if (stat(file, &st))
-  {
+  if (stat(file, &st)) {
     perror("stat");
     exit(EXIT_FAILURE);
   }
 
   // if command option include -i
-  if (opt->has_i)
-  {
+  if (opt->has_i) {
     // print inode number
     fprintf(stdout, "%ld ", st.st_ino);
   }
 
   // if command option include -l
-  if (opt->has_l)
-  {
+  if (opt->has_l) {
     // file permission string
     char perm[PERM_LEN + 1];
     get_perm_str(&st, perm);
@@ -220,59 +204,49 @@ void lf(const char *file, struct option_t *opt, int width)
 void ls(const char *path, struct option_t *opt)
 {
   // if path is a regular file, run with lf
-  if (isreg(path))
-  {
+  if (isreg(path)) {
     lf(path, opt, 0);
   }
-  else
-  {
+  else {
     struct dirent **namelist;
     int n;
 
     // reference: How to properly use scandir() in c
     // https://stackoverflow.com/questions/18402428/how-to-properly-use-scandir-in-c
     n = scandir(path, &namelist, NULL, alphasort);
-    if (n == -1)
-    {
+    if (n == -1) {
       perror("scandir");
       return;
     }
 
     // if command option include -R
-    if (opt->has_R)
-    {
+    if (opt->has_R) {
       fprintf(stdout, "%s:\n", path);
     }
 
     char nxt_path[MAX_LEN];
     strcpy(nxt_path, path);
-    if (path[strlen(path) - 1] != '/')
-    {
+    if (path[strlen(path) - 1] != '/') {
       strcat(nxt_path, "/");
     }
     char *name_start = nxt_path + strlen(nxt_path);
 
     int width = get_max_size(namelist, n);
-    for (int i = 0; i < n; ++i)
-    {
+    for (int i = 0; i < n; ++i) {
       const char *name = namelist[i]->d_name;
-      if (strcmp(name, ".") && strcmp(name, ".."))
-      {
+      if (strcmp(name, ".") && strcmp(name, "..")) {
         strcpy(name_start, name);
         lf(nxt_path, opt, width);
       }
     }
-    if (opt->has_R)
-    {
+    if (opt->has_R) {
       fprintf(stdout, "\n");
     }
 
-    for (int i = 0; i < n; ++i)
-    {
+    for (int i = 0; i < n; ++i) {
       const char *name = namelist[i]->d_name;
       strcpy(name_start, name);
-      if (strcmp(name, ".") && strcmp(name, "..") && isdir(nxt_path))
-      {
+      if (strcmp(name, ".") && strcmp(name, "..") && isdir(nxt_path)) {
         ls(nxt_path, opt);
       }
       free(namelist[i]);
@@ -284,24 +258,19 @@ void ls(const char *path, struct option_t *opt)
 // function for running ls
 void run_ls(struct option_t *opt)
 {
-  if (opt->paths)
-  {
-    for (int i = 0; i < opt->num_path; ++i)
-    {
-      if (opt->num_path > 1 && isdir(opt->paths[i]))
-      {
+  if (opt->paths) {
+    for (int i = 0; i < opt->num_path; ++i) {
+      if (opt->num_path > 1 && isdir(opt->paths[i])) {
         fprintf(stdout, "%s:\n", opt->paths[i]);
       }
       // if file exists
-      if (access(opt->paths[i], F_OK))
-      {
+      if (access(opt->paths[i], F_OK)) {
         fprintf(stdout, "\"%s\" command not found\n", opt->paths[i]);
       }
       ls(opt->paths[i], opt);
     }
   }
-  else
-  {
+  else {
     ls(".", opt);
   }
 }
@@ -313,8 +282,7 @@ int main(int argc, char **argv)
   struct option_t opt = (struct option_t){false, false, false, 0, NULL};
 
   // if input error, print usage, exit with EXIT_FAILURE
-  if (!parse_arguments(argc, argv, &opt))
-  {
+  if (!parse_arguments(argc, argv, &opt)) {
     print_usage(*argv);
     exit(EXIT_FAILURE);
   }
